@@ -21,32 +21,52 @@ const Home: NextPage<{ data: any }> = ({ data }) => {
         <title>Create Next App</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
       <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
+        <h1 className="text-6xl font-bold mb-4">
           Welcome to{' '}
           <a className="text-blue-600" href="https://nextjs.org">
             Next.js!
           </a>
         </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
-
-        {Object.keys(result).map((k) => (
-          <Fragment key={k}>
-            <div className="flex-row">
-              {result[k].map((f, index) => (
-                <span key={index}>{f.pointer}</span>
-              ))}
-            </div>
-            <div className="divider" />
-          </Fragment>
-        ))}
+        {Object.keys(result).map((k) => {
+          let currentFamc = ''
+          let current = -1
+          const bgColors = [
+            'bg-stone-100',
+            'bg-red-100',
+            'bg-orange-100',
+            'bg-amber-100',
+            'bg-lime-100',
+            'bg-green-100',
+            'bg-teal-100',
+            'bg-cyan-100',
+            'bg-sky-100',
+            'bg-violet-100',
+          ]
+          return (
+            <Fragment key={k}>
+              <div className="flex flex-row space-x-2">
+                {result[k].map((f, index) => {
+                  console.log(f.famc)
+                  if (!f.famc.includes(currentFamc)) {
+                    current += 1
+                    currentFamc = f.famc
+                  }
+                  return (
+                    <div
+                      className={`border-2 back border-lime-100 border-solid p-2 rounded ${bgColors[current]}`}
+                      key={index}>
+                      {f.husband && <span>{f.husband.name}</span>}
+                      {f.husband && f.wife && <span>&nbsp;❤️&nbsp;</span>}
+                      {f.wife && <span>{f.husband.name}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="divider" />
+            </Fragment>
+          )
+        })}
       </main>
 
       <footer className="flex h-24 w-full items-center justify-center border-t">

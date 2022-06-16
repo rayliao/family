@@ -25,20 +25,19 @@ const sortFamily = (gedcom: SelectionGedcom) => {
       isChild = false,
     ) => {
       const person = indi.getIndividualRecord()
-      // const { tag, value } = person.array()[0]
-      const famc = person.getChildFamilyLink().value()
-      if (isChild && famc.length === 0) {
-        console.log('person', person.array())
-        // const indexItem = sorted.hasOwnProperty(index) ? sorted[index] : []
-        // sorted[index] = indexItem.concat(fam.array()[0])
-      } else {
-        // 这里还需要区分是否是子女
-        famc.forEach((f) => {
-          if (f && allPointers.includes(f)) {
-            handleSingle(f, isChild ? index + 1 : index - 1)
-          }
-        })
-      }
+      person.arraySelect().forEach((p) => {
+        const famc = p.getChildFamilyLink().value()
+        if (isChild && famc.length === 0) {
+          const indexItem = sorted.hasOwnProperty(index) ? sorted[index] : []
+          sorted[index] = indexItem.concat(handleIndividual(p))
+        } else {
+          famc.forEach((f) => {
+            if (f && allPointers.includes(f)) {
+              handleSingle(f, isChild ? index + 1 : index - 1)
+            }
+          })
+        }
+      })
     }
 
     const handleIndividual = (indi: SelectionIndividualReference) => {
@@ -73,10 +72,17 @@ const sortFamily = (gedcom: SelectionGedcom) => {
       const wife = fam.getWife()
       const { tag, pointer, value } = fam.array()[0]
       const indexItem = sorted.hasOwnProperty(index) ? sorted[index] : []
+      const hb = handleIndividual(husband)
+      let famc = hb && hb.famc ? [hb.famc] : []
+      const wf = handleIndividual(wife)
+      if (wf && wf.famc) {
+        famc.push(wf.famc)
+      }
       sorted[index] = indexItem.concat({
         tag,
         pointer,
         value,
+        famc,
         husband: handleIndividual(husband),
         wife: handleIndividual(wife),
       })
