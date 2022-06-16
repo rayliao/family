@@ -15,7 +15,6 @@ export const getServerSideProps = async () => {
 
 const Home: NextPage<{ data: any }> = ({ data }) => {
   const result = JSON.parse(data)
-  console.log(result[100][0])
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
       <Head>

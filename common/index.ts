@@ -27,13 +27,12 @@ const sortFamily = (gedcom: SelectionGedcom) => {
       const person = indi.getIndividualRecord()
       // const { tag, value } = person.array()[0]
       const famc = person.getChildFamilyLink().value()
-      if (isChild && index === 100) {
-        console.log('indi', indi)
-      }
-      if (isChild && !famc.length) {
+      if (isChild && famc.length === 0) {
+        console.log('person', person.array())
         // const indexItem = sorted.hasOwnProperty(index) ? sorted[index] : []
         // sorted[index] = indexItem.concat(fam.array()[0])
       } else {
+        // 这里还需要区分是否是子女
         famc.forEach((f) => {
           if (f && allPointers.includes(f)) {
             handleSingle(f, isChild ? index + 1 : index - 1)
