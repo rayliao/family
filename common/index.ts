@@ -4,17 +4,21 @@ import {
   SelectionGedcom,
   SelectionIndividualRecord,
   SelectionIndividualReference,
-  TreeNode,
 } from 'read-gedcom'
+import fs from 'fs'
 import { server } from './config'
+import dayjs from 'dayjs'
 
-const promise = fetch(`${server}/royal92.ged`)
-  .then((r) => r.arrayBuffer())
-  .then(readGedcom)
+const data = fs.readFileSync('public/pres2020.ged', null).buffer
+const gedcom = readGedcom(data)
 
-export const getFamilyTree = () => promise.then((gedcom) => sortFamily(gedcom))
+// const promise = fetch(`${server}/royal92.ged`)
+//   .then((r) => r.arrayBuffer())
+//   .then(readGedcom)
 
-const sortFamily = (gedcom: SelectionGedcom) => {
+export const getFamilyTree = () => sortFamily()
+
+const sortFamily = () => {
   const allFams = gedcom.getFamilyRecord()
   const allPointers = allFams.pointer()
   const sorted = {}
@@ -100,6 +104,87 @@ const sortFamily = (gedcom: SelectionGedcom) => {
     }
   }
   return sorted
+}
+
+export const getALlEvents = () => {
+  const births: any = []
+  const pass: any = []
+  // 生日: 还有多少天；重要年龄：1，2，3，10，20，30，40，50，60，70，80，90；结婚: 1, 5, 10, 20, 30, 40
+  gedcom
+    .getFamilyRecord()
+    .arraySelect()
+    .forEach((f: SelectionFamilyRecord) => {
+      const d: any = f.getEventMarriage().getDate().valueAsDate()[0]
+      if (d && d.date && d.date.year) {
+        const years = dayjs().diff(d.date.year.value.toString(), 'year')
+        // if (years === 1 || years === 5 || (years > 0 && years % 10 === 0)) {
+        if (years > 0) {
+          const husband = f
+            .getHusband()
+            .getIndividualRecord()
+            .getName()
+            .valueNonNull()
+          const wife = f
+            .getWife()
+            .getIndividualRecord()
+            .getName()
+            .valueNonNull()
+          pass.push({
+            type: 1,
+            husband,
+            wife,
+            date: d.date.year.value,
+            years,
+          })
+        }
+      }
+    })
+  gedcom
+    .getIndividualRecord()
+    .arraySelect()
+    .forEach((p: SelectionIndividualRecord) => {
+      const name = p.getName().valueNonNull()[0]
+      const d: any = p.getEventBirth().getDate().valueAsDate()[0]
+      if (d && d.date) {
+        let age = 0
+        if (d.date.year) {
+          age = dayjs().diff(d.date.year.value.toString(), 'year')
+          if ((age >= 1 && age <= 10) || (age > 0 && age % 10 === 0)) {
+            pass.push({
+              type: 0,
+              name,
+              date: d.date.year.value,
+              years: age,
+            })
+          }
+        }
+        if (d.date.month && d.date.day) {
+          const birth = `${d.date.month}-${d.date.day}`
+          const days = dayjs(birth).diff(dayjs().format('MM-DD'), 'day')
+          if (days >= 0) {
+            births.push({
+              name,
+              birth,
+              days,
+              age,
+            })
+          }
+        }
+      }
+    })
+  return {
+    births: births
+      .filter((b) => b.days <= 30)
+      .sort((a, b) => (a.days > b.days ? -1 : 1)),
+    pass: pass
+      .filter((p) => p.years <= 400)
+      .sort((a, b) => (a.years > b.years ? 1 : -1)),
+  }
+}
+
+export const getPerson = async (pointer: string) => {
+  getALlEvents()
+  return ''
 }
 
 // Convert the javascript object containing family data into GEDCOM format
