@@ -1,24 +1,19 @@
 import {
   readGedcom,
   SelectionFamilyRecord,
-  SelectionGedcom,
   SelectionIndividualRecord,
   SelectionIndividualReference,
 } from 'read-gedcom'
-import fs from 'fs'
-import { server } from './config'
 import dayjs from 'dayjs'
-
-const data = fs.readFileSync('public/pres2020.ged', null).buffer
-const gedcom = readGedcom(data)
-
-// const promise = fetch(`${server}/royal92.ged`)
-//   .then((r) => r.arrayBuffer())
-//   .then(readGedcom)
+import { getGedcom } from './gedcom'
+const gedcom = getGedcom()
 
 export const getFamilyTree = () => sortFamily()
 
 const sortFamily = () => {
+  if (!gedcom) {
+    return null
+  }
   const allFams = gedcom.getFamilyRecord()
   const allPointers = allFams.pointer()
   const sorted = {}
@@ -107,6 +102,9 @@ const sortFamily = () => {
 }
 
 export const getALlEvents = () => {
+  if (!gedcom) {
+    return null
+  }
   const births: any = []
   const pass: any = []
   // 生日: 还有多少天；重要年龄：1，2，3，10，20，30，40，50，60，70，80，90；结婚: 1, 5, 10, 20, 30, 40

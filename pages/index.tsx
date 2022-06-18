@@ -24,13 +24,6 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
   events,
 }) => {
   const result = JSON.parse(data)
-  // console.log(events)
-  // fetch('api/hello')
-  //   .then((res) => res.json())
-  //   .then((data) => {
-  //     console.log(data)
-  //   })
-
   const [visibleEvent, setVisibleEvent] = useState<boolean>(false)
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
