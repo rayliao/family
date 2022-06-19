@@ -9,6 +9,30 @@ let gedData: {
   [key: string]: GedcomData
 } = {}
 
+// const generateData = (fileData: string) => {
+//   const data = {
+//     INDI: {
+//       '1': {},
+//       '2': {},
+//     },
+//   }
+//   let pointer = ''
+//   let tag = ''
+//   let current = ''
+//   fileData.split('\n').forEach((line) => {
+//     const [index, t, ...value] = line.split(' ')
+//     if (index !== current) {
+//       if (index === '0') {
+//         pointer = t
+//         tag = value.join(' ')
+//       } else {
+
+//       }
+//     }
+//     current = index
+//   })
+// }
+
 /**
  * get gedcom data by read
  */
@@ -16,6 +40,8 @@ export const getGedcom = (fileName: string = FILE_NAME) => {
   try {
     const hasCache = fileCache.hasOwnProperty(fileName)
     const hasData = gedData.hasOwnProperty(fileName)
+    const res = fs.readFileSync(`public/${fileName}.ged`, 'utf8')
+    console.log('res', res)
     const data = hasCache
       ? fileCache[fileName]
       : fs.readFileSync(`public/${fileName}.ged`, null).buffer
@@ -26,27 +52,29 @@ export const getGedcom = (fileName: string = FILE_NAME) => {
       h[0].children
         .filter((c) => c.tag)
         .forEach((c) => {
-          if (c.children.length > 0) {
-            const cv = {
-              value: c.value,
-            }
-            c.children
-              .filter((cc) => cc.tag)
-              .forEach((cc) => {
-                cv[cc.tag!] = cc.value
-              })
-            head[c.tag!] = cv
-          } else {
-            head[c.tag!] = c.value
-          }
+          // if (c.children.length > 0) {
+          //   const cv = {
+          //     value: c.value,
+          //   }
+          //   c.children
+          //     .filter((cc) => cc.tag)
+          //     .forEach((cc) => {
+          //       cv[cc.tag!] = cc.value
+          //     })
+          //   head[c.tag!] = cv
+          // } else {
+          head[c.tag!] = c.value
+          // }
         })
       const s = result.getSubmitterRecord()
       const subm = {}
-      s[0].children
-        .filter((c) => c.tag)
-        .forEach((c) => {
-          subm[c.tag!] = c.value
+      s.arraySelect().forEach((item) => {
+        const childs = {}
+        item[0].children.forEach((c) => {
+          childs[c.tag!] = c.value
         })
+        subm[item.pointer] = childs
+      })
     }
     return result
   } catch {
