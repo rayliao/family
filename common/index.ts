@@ -6,7 +6,7 @@ import {
 } from 'read-gedcom'
 import dayjs from 'dayjs'
 import { getGedcom } from './gedcom'
-const gedcom = getGedcom()
+const gedcom = null
 
 export const getFamilyTree = () => sortFamily()
 
@@ -183,51 +183,4 @@ export const getALlEvents = () => {
 export const getPerson = async (pointer: string) => {
   getALlEvents()
   return ''
-}
-
-// Convert the javascript object containing family data into GEDCOM format
-const convertFamilyTree = (familyTree: any) => {
-  // var dataTree = this.data.slice(0)
-  // // Recursively loop over each item and add to data array
-  // var dataArray = []
-  // dataTree.forEach(function flatten(item) {
-  //   // Preprocess value for inserting CONC and CONT tags
-  //   var values = []
-  //   if (item.value) {
-  //     values = item.value.match(/(\n|.{1,200})/g)
-  //   }
-  //   // Add data
-  //   dataArray.push(
-  //     `${item.level}${item.pointer ? ' ' + item.pointer : ''}${
-  //       item.tag ? ' ' + item.tag : ''
-  //     }${values.length > 0 ? ' ' + values[0] : ''}`,
-  //   )
-  //   // Add extra data in CONT or CONC
-  //   while (values.length > 1) {
-  //     values.shift()
-  //     if (values[0].includes('\n')) {
-  //       dataArray.push(`${item.level + 1} CONT ${values[1]}`)
-  //       values.shift()
-  //     } else {
-  //       dataArray.push(`${item.level + 1} CONC ${values[0]}`)
-  //     }
-  //   }
-  //   // Children
-  //   if (item.items) {
-  //     item.items.forEach(flatten)
-  //   }
-  //   return item
-  // })
-  // // Return data array as string
-  // return dataArray.join('\n')
-}
-
-// save data to gedcom file
-const saveFile = () => {
-  // const data = convertFamilyTree(getFamilyTree())
-  // const blob = new Blob([data], { type: 'text/plain;charset=utf-8' })
-  // const link = document.createElement('a')
-  // link.href = URL.createObjectURL(blob)
-  // link.download = 'royal92.ged'
-  // link.click()
 }

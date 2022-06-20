@@ -1,27 +1,30 @@
 import fs from 'fs'
-import { readGedcom, SelectionHeader } from 'read-gedcom'
+const FILE_NAME = 'rayliao'
 
-const FILE_NAME = 'pres2020'
-let fileCache: {
-  [key: string]: ArrayBuffer
-} = {}
-let gedData: {
-  [key: string]: GedcomData
-} = {}
+interface DataItem {
+  [key: string]: string | DataItem
+}
+export interface GedcomData {
+  HEAD: DataItem
+  INDI: DataItem
+  FAM: DataItem
+  TRLR: DataItem
+}
 
-const generateData = () => {
-  const fileData = fs.readFileSync('public/liao.ged', 'utf-8')
-  const data = {
+const dataCache = new Map<string, GedcomData>()
+
+const generateData = (fileName: string = FILE_NAME) => {
+  const fileData = fs.readFileSync(`public/${fileName}.ged`, 'utf-8')
+  const data: GedcomData = {
     HEAD: {},
-    SUBM: {},
     INDI: {},
     FAM: {},
+    TRLR: {},
   }
   let tag = ''
   let id = ''
   let tag2 = ''
   let tag3 = ''
-  let preData: string[] = []
   fileData.split('\n').forEach((line) => {
     if (line.trim()) {
       const [index, second, ...third] = line.split(' ')
@@ -36,8 +39,7 @@ const generateData = () => {
           break
         case '1':
           tag2 = second
-          console.log(data)
-          if (tag === 'HEAD') {
+          if (tag === 'HEAD' || tag === 'TRLR') {
             data[tag][tag2] = value
           } else {
             data[tag][id][tag2] = value
@@ -45,115 +47,92 @@ const generateData = () => {
           break
         case '2':
           tag3 = second
-          if (tag === 'HEAD') {
+          if (tag === 'HEAD' || tag === 'TRLR') {
             data[tag][tag2][tag3] = value
           } else {
             data[tag][id][tag2][tag3] = value
           }
           break
       }
-      preData = [index, second, value]
     }
   })
-  console.log(data)
+  dataCache.set(fileName, data)
+  return data
 }
 
 /**
- * get gedcom data by read
+ * get gedcom data from file or cache
  */
 export const getGedcom = (fileName: string = FILE_NAME) => {
-  try {
-    const hasCache = fileCache.hasOwnProperty(fileName)
-    const hasData = gedData.hasOwnProperty(fileName)
-    generateData()
-    const data = hasCache
-      ? fileCache[fileName]
-      : fs.readFileSync(`public/${fileName}.ged`, null).buffer
-    const result = readGedcom(data)
-    // if (!hasData) {
-    //   const h = result.getHeader()
-    //   const head = {}
-    //   h[0].children
-    //     .filter((c) => c.tag)
-    //     .forEach((c) => {
-    //       if (c.children.length > 0) {
-    //         const cv = {
-    //           value: c.value,
-    //         }
-    //         c.children
-    //           .filter((cc) => cc.tag)
-    //           .forEach((cc) => {
-    //             cv[cc.tag!] = cc.value
-    //           })
-    //         head[c.tag!] = cv
-    //       } else {
-    //         head[c.tag!] = c.value
-    //       }
-    //     })
-    //   const s = result.getSubmitterRecord()
-    //   const subm = {}
-    //   s.arraySelect().forEach((item) => {
-    //     const childs = {}
-    //     item[0].children.forEach((c) => {
-    //       childs[c.tag!] = c.value
-    //     })
-    //     subm[item.pointer] = childs
-    //   })
-    // }
-    return result
-  } catch {
-    return null
-  }
+  const hasCache = dataCache.has(fileName)
+  return hasCache ? dataCache.get(fileName) : generateData(fileName)
 }
 
-export interface GedcomData {
-  head: { [key: string]: string }
-  subm: { [key: string]: { [key: string]: string } }
-  indi: { [key: string]: { [key: string]: string } }
-  fam: { [key: string]: { [key: string]: string } }
-}
-
+/**
+ * save data to gedcom file
+ */
 export const saveGedcom = async (fileName: string = FILE_NAME) => {
-  const data = gedData[fileName]
-  const head = ['0 HEAD']
-  const subm: string[] = []
-  const indi: string[] = []
-  const fam: string[] = []
-  for (const d in data) {
-    switch (d) {
-      case 'head':
-        for (const h in data.head) {
-          head.push(`1 ${h} ${data.head[h]}`)
-        }
-        break
-      case 'subm':
-        for (const s in data.subm) {
-          subm.push(`0 ${s} SUBM`)
-          for (const ss in data.subm[s]) {
-            subm.push(`1 ${ss} ${data.subm[s][ss]}`)
+  try {
+    if (dataCache.has(fileName)) {
+      const tt: GedcomData = {
+        HEAD: {
+          VERSION: '5.5.1',
+          GEDC: '5.5.1',
+        },
+        INDI: {
+          '@I0001': {
+            NAME: 'Rayliao',
+            GIVN: 'Rayliao',
+          },
+          '@I0002': {
+            NAME: 'Rayliao',
+            BIRTH: {
+              DATE: '1850',
+              PLAC: 'sdf',
+            },
+          },
+        },
+        FAM: {},
+        TRLR: {},
+      }
+      const data = dataCache.get(fileName)
+      const result: string[] = []
+      const head = ['0 HEAD']
+      const indi: string[] = []
+      const fam: string[] = []
+      const subm: string[] = []
+      const recursionData = (data, index = 0) => {
+        for (const k in data) {
+          const value = data[k]
+          if (k === 'HEAD' || k === 'TRLR') {
+            result.push(`0 ${k}`)
+          }
+          if (typeof value === 'string') {
+            result.push(`${index} ${k} ${data[k]}`)
+          } else {
+            recursionData(data[k], index + 1)
           }
         }
-        break
-      case 'indi':
-        for (const i in data.indi) {
-          indi.push(`0 ${i} INDI`)
-          for (const ii in data.indi[i]) {
-            indi.push(`1 ${ii} ${data.indi[i][ii]}`)
+      }
+      for (const k in data) {
+        if (k === 'HEAD' || k === 'TRLR') {
+          result.push(`0 ${k}`)
+        }
+        for (const kk in data[k]) {
+          if (k === 'INDI' || k === 'FAM') {
+            result.push(`0 ${kk} @${k}`)
+          }
+          if (typeof data[k][kk] === 'string') {
+            result.push(`1 ${kk} ${data[k][kk]}`)
           }
         }
-        break
-      case 'fam':
-        for (const f in data.fam) {
-          fam.push(`0 ${f} FAM`)
-          for (const ff in data.fam[f]) {
-            fam.push(`1 ${ff} ${data.fam[f][ff]}`)
-          }
-        }
+      }
+      const all = head.concat(subm, indi, fam).join('\n')
+      fs.writeFileSync(`public/${fileName}.ged`, all)
+    } else {
+      return false
     }
+  } catch {
+    return false
   }
-  const all = head.concat(subm, indi, fam).join('\n')
-  fileCache[fileName] = await new Blob([all], {
-    type: 'text/plain;charset=utf-8',
-  }).arrayBuffer()
-  fs.writeFileSync(`public/${fileName}.ged`, all)
 }
