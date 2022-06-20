@@ -9,29 +9,60 @@ let gedData: {
   [key: string]: GedcomData
 } = {}
 
-// const generateData = (fileData: string) => {
-//   const data = {
-//     INDI: {
-//       '1': {},
-//       '2': {},
-//     },
-//   }
-//   let pointer = ''
-//   let tag = ''
-//   let current = ''
-//   fileData.split('\n').forEach((line) => {
-//     const [index, t, ...value] = line.split(' ')
-//     if (index !== current) {
-//       if (index === '0') {
-//         pointer = t
-//         tag = value.join(' ')
-//       } else {
-
-//       }
-//     }
-//     current = index
-//   })
-// }
+const generateData = (fileData: string) => {
+  const data = {
+    INDI: {
+      '1': {},
+      '2': {},
+    },
+    FAM: {},
+  }
+  const dd = [
+    {
+      tag: 'INDI',
+      id: '1',
+      children: [
+        { NAME: 'JOHN' },
+        { FAMC: '1' },
+        { BIRT: [{ DATE: '' }, { DEAT: '' }] },
+      ],
+    },
+    {
+      tag: 'FAM',
+      id: '2',
+      children: [
+        {
+          HUSBAND: '1',
+          MARR: [{ DATE: '1422' }],
+        },
+      ],
+    },
+  ]
+  let tag = ''
+  let id = ''
+  let tag2 = ''
+  let tag3 = ''
+  let preData: string[] = []
+  fileData.split('\n').forEach((line) => {
+    const [index, second, ...third] = line.split(' ')
+    const value = third.join(' ')
+    switch (index) {
+      case '0':
+        id = second
+        tag = value
+        break
+      case '1':
+        tag2 = second
+        data[tag][id][tag2] = value
+        break
+      case '2':
+        tag3 = second
+        data[tag][id][tag2][tag3] = value
+        break
+    }
+    preData = [index, second, value]
+  })
+}
 
 /**
  * get gedcom data by read

@@ -1,0 +1,17 @@
+0 HEAD
+1 NAME Family Of Liao
+1 CHAR UTF-8
+1 FILE liao.GED
+0 @I1@ INDI
+1 NAME 廖颖雷
+1 SEX M
+0 @I2@ INDI
+1 NAME 杨沁
+1 SEX F
+0 @I3@ INDI
+1 NAME 廖准
+1 SEX M
+0 @F1@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 CHIL @I3@
