@@ -22,37 +22,52 @@ const generateData = (fileName: string = FILE_NAME) => {
     TRLR: {},
   }
   let tag = ''
-  let id = ''
   let tag2 = ''
   let tag3 = ''
+  let item: any = {}
+  let parent: any = undefined
+  let preItem: any = undefined
   fileData.split('\n').forEach((line) => {
     if (line.trim()) {
       const [index, second, ...third] = line.split(' ')
       const value = third ? third.join(' ') : ''
-      switch (index) {
-        case '0':
-          id = second
-          tag = value || second
-          if (value) {
-            data[tag][id] = {}
+      if (index === '0') {
+        if (tag) {
+          data[tag] = {
+            ...data[tag],
+            ...item,
           }
-          break
-        case '1':
-          tag2 = second
-          if (tag === 'HEAD' || tag === 'TRLR') {
-            data[tag][tag2] = value
+          item = {}
+        }
+        tag = second
+        if (value) {
+          tag = value
+          item.id = second
+        }
+        parent = undefined
+        preItem = undefined
+      } else {
+        if (parent) {
+          item[parent.second][second] = value
+        } else {
+          item[second] = value
+        }
+
+        if (preItem && preItem.index !== index) {
+          parent = preItem
+          item[parent.second].value = item[parent.second]
+          item[parent.second][second] = value
+        } else {
+          if (parent) {
+            item[parent.second][second] = value
           } else {
-            data[tag][id][tag2] = value
+            item[second] = value
           }
-          break
-        case '2':
-          tag3 = second
-          if (tag === 'HEAD' || tag === 'TRLR') {
-            data[tag][tag2][tag3] = value
-          } else {
-            data[tag][id][tag2][tag3] = value
-          }
-          break
+        }
+        preItem = { index, second, value }
+        // if (!parent || parent.index !== index) {
+        //   parent = preItem
+        // }
       }
     }
   })
@@ -74,61 +89,32 @@ export const getGedcom = (fileName: string = FILE_NAME) => {
 export const saveGedcom = async (fileName: string = FILE_NAME) => {
   try {
     if (dataCache.has(fileName)) {
-      const tt: GedcomData = {
-        HEAD: {
-          VERSION: '5.5.1',
-          GEDC: '5.5.1',
-        },
-        INDI: {
-          '@I0001': {
-            NAME: 'Rayliao',
-            GIVN: 'Rayliao',
-          },
-          '@I0002': {
-            NAME: 'Rayliao',
-            BIRTH: {
-              DATE: '1850',
-              PLAC: 'sdf',
-            },
-          },
-        },
-        FAM: {},
-        TRLR: {},
-      }
-      const data = dataCache.get(fileName)
       const result: string[] = []
-      const head = ['0 HEAD']
-      const indi: string[] = []
-      const fam: string[] = []
-      const subm: string[] = []
-      const recursionData = (data, index = 0) => {
+      const recursionData = (data, i = 0) => {
+        let index = i
         for (const k in data) {
           const value = data[k]
-          if (k === 'HEAD' || k === 'TRLR') {
-            result.push(`0 ${k}`)
-          }
           if (typeof value === 'string') {
             result.push(`${index} ${k} ${data[k]}`)
           } else {
+            if (k !== 'INDI' && k !== 'FAM') {
+              index = k === 'HEAD' || k === 'TRLR' ? 0 : index
+              result.push(`${index} ${k}`)
+            }
+            if (/^@I\d*@$/.test(k)) {
+              index = 0
+              result.push(`${index} ${k} INDI`)
+            }
+            if (/^@F\d*@$/.test(k)) {
+              index = 0
+              result.push(`${index} ${k} FAM`)
+            }
             recursionData(data[k], index + 1)
           }
         }
       }
-      for (const k in data) {
-        if (k === 'HEAD' || k === 'TRLR') {
-          result.push(`0 ${k}`)
-        }
-        for (const kk in data[k]) {
-          if (k === 'INDI' || k === 'FAM') {
-            result.push(`0 ${kk} @${k}`)
-          }
-          if (typeof data[k][kk] === 'string') {
-            result.push(`1 ${kk} ${data[k][kk]}`)
-          }
-        }
-      }
-      const all = head.concat(subm, indi, fam).join('\n')
-      fs.writeFileSync(`public/${fileName}.ged`, all)
+      recursionData(dataCache.get(fileName))
+      fs.writeFileSync(`public/${fileName}.ged`, result.join('\n'))
     } else {
       return false
     }
