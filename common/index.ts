@@ -1,14 +1,78 @@
 import {
-  readGedcom,
   SelectionFamilyRecord,
   SelectionIndividualRecord,
   SelectionIndividualReference,
 } from 'read-gedcom'
 import dayjs from 'dayjs'
-import { getGedcom } from './gedcom'
-const gedcom = null
+import Gedcom, { FamItem } from './gedcom'
 
-export const getFamilyTree = () => sortFamily()
+const gedcom = new Gedcom()
+
+export const getFamily = async (famId?: string) => {
+  const allFams: FamItem[] = await gedcom.getFam()
+  const allKeys: string[] = allFams.map((f) => f.Id)
+  const result = {}
+
+  const handleRelations = async (id: string, layer: number, isChild = true) => {
+    try {
+      const p = await gedcom.getPerson(id)
+      if (p) {
+        let relas: any = p.Relations
+        const onlyOne = typeof relas === 'string'
+        relas = onlyOne ? [relas] : relas
+        relas = relas.filter((k) => allKeys.indexOf(k) !== -1)
+        if (isChild && onlyOne && relas.length === 0) {
+          const layerItem = result.hasOwnProperty(layer) ? result[layer] : []
+          result[layer] = layerItem.concat(p)
+        } else {
+          relas.forEach((k) => handleItem(k, layer))
+        }
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const handleItem = async (fId: string, layer = 100) => {
+    try {
+      const item = allFams.find((f) => f.Id === fId)
+      if (item) {
+        const husband = await gedcom.getPerson(item.Husband)
+        const wife = await gedcom.getPerson(item.Wife)
+        const layerItem = result.hasOwnProperty(layer) ? result[layer] : []
+        result[layer] = layerItem.concat({
+          ...item,
+          Husband: husband,
+          Wife: wife,
+        })
+        const index = allKeys.indexOf(fId)
+        if (index !== -1) {
+          allKeys.splice(index, 1)
+        }
+        // 找到孩子自己的信息里面找关系，过滤掉已经处理的，剩下的就是自己的关系，没有就是只有自己
+        if (item.Children) {
+          if (typeof item.Children === 'string') {
+            await handleRelations(item.Children, layer + 1)
+          } else {
+            item.Children.forEach(
+              async (id) => await handleRelations(id, layer + 1),
+            )
+          }
+        }
+        // 找到夫妻的信息里面找关系，过滤掉处理的，有关系的话就是其父母的关系
+        await handleRelations(item.Husband, layer - 1, false)
+        await handleRelations(item.Wife, layer - 1, false)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  const entry = famId ? allKeys[famId] : allKeys[0]
+  if (entry) {
+    handleItem(entry)
+  }
+  return result
+}
 
 const sortFamily = () => {
   if (!gedcom) {

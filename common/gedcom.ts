@@ -1,17 +1,61 @@
 import fs from 'fs'
 const FILE_NAME = 'rayliao'
+import { JsonParsing, ParsingOptions } from 'gedcom.json'
+import ParsingResult from 'gedcom.json/src/ToJSON/models/ParsingResult'
+
+export interface FamItem {
+  Id: string
+  Children?: string | string[]
+  Husband: string
+  Wife: string
+  Marriage?: {
+    Date: {
+      And: any
+      Between: any
+      Original: string
+    }
+    Place: string
+  }
+}
+
+export interface IndiItem {
+  Id: string
+  Relations?: string[] | string
+}
+
+const dataCache = new Map<string, ParsingResult>()
+export default class Gedcom {
+  private getData = async (fileName: string = FILE_NAME) => {
+    const hasCache = dataCache.has(fileName)
+    if (hasCache) {
+      return dataCache.get(fileName)
+    } else {
+      // const fileData = fs.readFileSync(`public/${fileName}.ged`, 'utf-8')
+      parsingOptions.SetFilePath(`public/${fileName}.ged`)
+      const result = await parse.ParseFileAsync()
+      dataCache.set(fileName, result)
+      return result
+    }
+  }
+
+  getFam = async (): Promise<FamItem[]> => {
+    const d = await this.getData()
+    return d ? d.Object['Relations'] : []
+  }
+
+  getPerson = async (Id: string): Promise<IndiItem | undefined> => {
+    const d = await this.getData()
+    const indi: IndiItem[] = d ? d.Object['Individuals'] : []
+    return indi.find((i) => i.Id === Id)
+  }
+}
 
 interface DataItem {
   [key: string]: string | DataItem
 }
-export interface GedcomData {
-  HEAD: DataItem
-  INDI: DataItem
-  FAM: DataItem
-  TRLR: DataItem
-}
 
-const dataCache = new Map<string, GedcomData>()
+const parsingOptions = new ParsingOptions()
+const parse = new JsonParsing(parsingOptions)
 
 const generateData = (fileName: string = FILE_NAME) => {
   const fileData = fs.readFileSync(`public/${fileName}.ged`, 'utf-8')
@@ -78,9 +122,17 @@ const generateData = (fileName: string = FILE_NAME) => {
 /**
  * get gedcom data from file or cache
  */
-export const getGedcom = (fileName: string = FILE_NAME) => {
+export const getGedcom = async (fileName: string = FILE_NAME) => {
   const hasCache = dataCache.has(fileName)
-  return hasCache ? dataCache.get(fileName) : generateData(fileName)
+  if (hasCache) {
+    return dataCache.get(fileName)
+  } else {
+    // const fileData = fs.readFileSync(`public/${fileName}.ged`, 'utf-8')
+    parsingOptions.SetFilePath(`public/${fileName}.ged`)
+    const result = await parse.ParseFileAsync()
+    dataCache.set(fileName, result)
+    return result
+  }
 }
 
 /**

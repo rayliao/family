@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
-import { getALlEvents, getFamilyTree } from '../common'
+import { getALlEvents, getFamily } from '../common'
 import { Fragment, useState } from 'react'
 import { Button, Modal } from 'react-daisyui'
 import dayjs from 'dayjs'
@@ -9,12 +9,11 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
 
 export const getServerSideProps = async () => {
-  const data = await getFamilyTree()
-  const events = await getALlEvents()
+  const data = await getFamily()
+  // const events = await getALlEvents()
   return {
     props: {
       data: JSON.stringify(data),
-      events,
     },
   }
 }
@@ -24,6 +23,7 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
   events,
 }) => {
   const result = JSON.parse(data)
+  console.log(result)
   const [visibleEvent, setVisibleEvent] = useState<boolean>(false)
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
@@ -43,7 +43,7 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
             统计
           </Button>
         </div>
-        {Object.keys(result).map((k) => {
+        {/* {Object.keys(result).map((k) => {
           let currentFamc = ''
           let current = -1
           const bgColors = [
@@ -80,28 +80,29 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
               <div className="divider" />
             </Fragment>
           )
-        })}
+        })} */}
       </main>
       <Modal open={visibleEvent} onClickBackdrop={() => setVisibleEvent(false)}>
         <Modal.Header>事件</Modal.Header>
-
-        <Modal.Body>
-          {events.births.map((b, index) => (
-            <p key={index}>
-              {b.days === 0
-                ? `🎉${b.name}今天生日`
-                : `🍰离${b.name}生日还有${b.days}天`}
-            </p>
-          ))}
-          <div>...</div>
-          {events.pass.map((p, index) => (
-            <p key={index}>
-              {p.type === 0
-                ? `✌️${p.name}${p.years}岁啦`
-                : `🎎${p.husband}和${p.wife}结婚${p.years}年啦`}
-            </p>
-          ))}
-        </Modal.Body>
+        {events ? (
+          <Modal.Body>
+            {events.births.map((b, index) => (
+              <p key={index}>
+                {b.days === 0
+                  ? `🎉${b.name}今天生日`
+                  : `🍰离${b.name}生日还有${b.days}天`}
+              </p>
+            ))}
+            <div>...</div>
+            {events.pass.map((p, index) => (
+              <p key={index}>
+                {p.type === 0
+                  ? `✌️${p.name}${p.years}岁啦`
+                  : `🎎${p.husband}和${p.wife}结婚${p.years}年啦`}
+              </p>
+            ))}
+          </Modal.Body>
+        ) : null}
 
         <Modal.Actions>
           <Button onClick={() => setVisibleEvent(false)} color="primary">
