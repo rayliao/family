@@ -24,27 +24,28 @@ export interface IndiItem {
 }
 
 const dataCache = new Map<string, ParsingResult>()
+
 export default class Gedcom {
-  private getData = async (fileName: string = FILE_NAME) => {
+  private getData = (fileName: string = FILE_NAME) => {
     const hasCache = dataCache.has(fileName)
     if (hasCache) {
       return dataCache.get(fileName)
     } else {
-      // const fileData = fs.readFileSync(`public/${fileName}.ged`, 'utf-8')
-      parsingOptions.SetFilePath(`public/${fileName}.ged`)
-      const result = await parse.ParseFileAsync()
+      const fileData = fs.readFileSync(`public/${fileName}.ged`, 'utf-8')
+      parsingOptions.SetText(fileData)
+      const result = parse.ParseText()
       dataCache.set(fileName, result)
       return result
     }
   }
 
-  getFam = async (): Promise<FamItem[]> => {
-    const d = await this.getData()
+  getFam = (): FamItem[] => {
+    const d = this.getData()
     return d ? d.Object['Relations'] : []
   }
 
-  getPerson = async (Id: string): Promise<IndiItem | undefined> => {
-    const d = await this.getData()
+  getPerson = (Id: string): IndiItem | undefined => {
+    const d = this.getData()
     const indi: IndiItem[] = d ? d.Object['Individuals'] : []
     return indi.find((i) => i.Id === Id)
   }

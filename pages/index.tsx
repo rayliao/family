@@ -32,7 +32,7 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <div className="flex justify-center space-x-4 mb-8 py-5 fixed bg-blue-200 w-full top-0">
+        <div className="flex justify-center space-x-4 mb-8 py-5 bg-blue-200 w-full">
           <Button
             size="sm"
             color="primary"
@@ -43,9 +43,9 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
             统计
           </Button>
         </div>
-        {/* {Object.keys(result).map((k) => {
-          let currentFamc = ''
-          let current = -1
+        {Object.keys(result).map((k) => {
+          // let currentFamc = ''
+          // let current = -1
           const bgColors = [
             'bg-stone-100',
             'bg-red-100',
@@ -62,17 +62,23 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
             <Fragment key={k}>
               <div className="flex flex-row space-x-2">
                 {result[k].map((f, index) => {
-                  if (!f.famc.includes(currentFamc)) {
-                    current += 1
-                    currentFamc = f.famc
-                  }
-                  return (
+                  // if (!f.famc.includes(currentFamc)) {
+                  //   current += 1
+                  //   currentFamc = f.famc
+                  // }
+                  return /^@I\d*@$/.test(f.Id) ? (
                     <div
-                      className={`border-2 back border-lime-100 border-solid p-2 rounded ${bgColors[current]}`}
+                      className={`border-2 back border-lime-100 border-solid p-2 rounded`}
                       key={index}>
-                      {f.husband && <span>{f.husband.name}</span>}
-                      {f.husband && f.wife && <span>&nbsp;❤️&nbsp;</span>}
-                      {f.wife && <span>{f.husband.name}</span>}
+                      <span>{f.Fullname}</span>
+                    </div>
+                  ) : (
+                    <div
+                      className={`border-2 back border-lime-100 border-solid p-2 rounded`}
+                      key={index}>
+                      {f.Husband && <span>{f.Husband.Fullname}</span>}
+                      {f.Husband && f.Wife && <span>&nbsp;❤️&nbsp;</span>}
+                      {f.Wife && <span>{f.Wife.Fullname}</span>}
                     </div>
                   )
                 })}
@@ -80,7 +86,7 @@ const Home: NextPage<{ data: any; events: { births: any; pass: any } }> = ({
               <div className="divider" />
             </Fragment>
           )
-        })} */}
+        })}
       </main>
       <Modal open={visibleEvent} onClickBackdrop={() => setVisibleEvent(false)}>
         <Modal.Header>事件</Modal.Header>
